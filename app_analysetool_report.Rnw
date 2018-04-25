@@ -1,0 +1,150 @@
+\documentclass{article}
+
+\usepackage[a4paper]{geometry}
+%\usepackage[dutch]{babel} %de boosdoener voor het niet draaien bij hosten!!!
+\usepackage[hidelinks]{hyperref}
+\usepackage{float} %voor geforceerd plaatsen met [H]
+
+\setcounter{secnumdepth}{0}
+\newgeometry{top=3.5cm, left=3.5cm, right=3.5cm, bottom=3.5cm} %alle marges 2,5 cm voor huisstijl
+
+\title{Overzicht toetsanalyse}
+\author{Aangemaakt met ToetsAnalyseTool \textit{10voordeleraar}}
+
+\begin{document}
+
+\maketitle
+
+De toets bestaat uit \Sexpr{nrow(vraaggegevens())} vragen en is gemaakt door \Sexpr{nrow(antwoordgegevens())} toetsdeelnemers. De maximaal haalbare totaalscore is \Sexpr{sum(vraaggegevens()$maxscore)} en gebaseerd op het aantal en type meerkeuzevragen in de toets, is \Sexpr{round(gokscore(),2)} de verwachte totaalscore op de toets op basis van puur gokken (de gokscore). De betrouwbaarheid van de toets is, uitgedrukt in Cronbachs alfa, $\alpha=$ \Sexpr{round(as.numeric(cronbach(accgegevens())[3]),2)}.
+
+De door deelnemers behaalde totaalscores liggen tussen de \Sexpr{min(apply(accgegevens(),1,sum))} en \Sexpr{max(apply(accgegevens(),1,sum))}. De gemiddelde totaalscore is \Sexpr{round(mean(apply(accgegevens(),1,sum)),2)}, met een standaarddeviatie van \Sexpr{round(sd(apply(accgegevens(),1,sum)),2)}.
+
+\subsection{Scores per toetsonderdeel}
+
+In Figuur \ref{plot_deelscores} wordt de verdeling weergegeven van de door toetsdeelnemers behaalde scores per toetsonderdeel. Bij elk onderdeel staat de gemiddeld behaalde score. Als de toets bestaat uit verschillende onderdelen, wordt ook de correlatie tussen de scores op elk onderdeel weergegeven.
+
+\begin{figure}[H]
+<<plot_deelscores, echo=F, warning=F, fig.height=4>>=
+plot_deelscores_reactive()
+@
+\caption{Verdeling van het aantal goed beantwoorde vragen per toetsonderdeel}
+\label{plot_deelscores}
+\end{figure}
+
+<<plot_coronderdelen, echo=F, warning=F, fig.height=4, fig.cap="Correlaties tussen totaalscores op de verschillende toetsonderdelen">>=
+if(!is.null(plot_coronderdelen_reactive())){plot_coronderdelen_reactive()}
+@
+
+\subsection{Statistische eigenschappen van de toetsvragen}
+
+De moeilijkheidsgraad en het onderscheidend vermogen van elke toetsvraag wordt weergegeven in Figuur \ref{plot_gulliksen}. Vragen die in een rood gebied vallen zijn volgens de door de gebruiker ingestelde grenswaarden ofwel moeilijk of erg makkelijk, of hebben een laag onderscheidend vermogen. Van de \Sexpr{nrow(vraaggegevens())} vragen in de toets, zijn er \Sexpr{sum(itemgegevens_commentaar()$probleem!="")} die in zo'n probleemgebied vallen en/of minder vaak goed zijn beantwoord dan op basis van puur gokken zou worden verwacht. 
+
+De relatieve moeilijkheidsgraad van vragen wordt in het figuur uitgedrukt in $p$-waardes: de proportie toetsdeelnemers die een vraag correct heeft beantwoord. Bij vragen met deelscores wordt in plaats hiervan de gemiddeld behaalde proportie van de maximale score weergegeven. Het onderscheidend vermogen van vragen wordt uitgedrukt in item-rest-correlaties: de samenhang tussen de score op een vraag en op de rest van de vragen in de toets. Bij vragen die goed in de toets als geheel passen, is deze samenhang positief (ideaal gezien groter dan 0.30).   
+
+\begin{figure}[H]
+<<plot_gulliksen, echo=F, warning=F, fig.height=4>>=
+plot_gulliksen_reactive()
+@
+\caption{Overzicht van de moeilijkheidsgraad en het onderscheidend vermogen per toetsvraag}
+\label{plot_gulliksen}
+\end{figure}
+
+\subsection{Wijzigingen in de toets}
+
+Naar aanleiding van informatie over hoe vaak welke antwoorden op vragen zijn gegeven (en hoe dit samenhangt met scores op de rest van de toets), kon worden gekozen voor het wijzigen van de scoring van vragen of specifieke antwoorden. Hierbij kon gekozen worden voor het laten vervallen van de vraag uit de toets, het goedrekenen van alle antwoorden op een vraag, het goedrekenen van een extra antwoord naast het oorspronkelijk goedgerekende antwoord, of het goedrekenen van een ander antwoord in plaats van het oorspronkelijk goedgerekende antwoord. Het aantal vragen waarbij een wijziging plaatsvond is \Sexpr{nrow(vraagwijzigingen()[vraagwijzigingen()$vervallen=="ja"|vraagwijzigingen()$allesgoedrekenen=="ja"|!is.na(vraagwijzigingen()$extragoedrekenen)|!is.na(vraagwijzigingen()$andergoedrekenen),])}.
+
+<<tab_vraagwijzigingen, r, echo=FALSE, warning=FALSE, results="asis">>=
+if(!is.null(vraagwijzigingen_ja())){
+  print(xtable(vraagwijzigingen_ja(), caption="Vraagwijzigingen"), include.rownames=FALSE, caption.placement = "top", comment=F)}
+@
+
+De uiteindelijke toets bestaat daarmee uit \Sexpr{nrow(vraaggegevens_wijz())} vragen, heeft een maximale score van \Sexpr{sum(vraaggegevens_wijz()$maxscore)} en een gokscore van \Sexpr{round(gokscore_wijz(),2)}, en een Cronbachs alfa van \Sexpr{round(as.numeric(cronbach(accgegevens_wijz())[3]),2)}. De totaalscores op de uiteindelijke toets liggen tussen de \Sexpr{min(apply(accgegevens_wijz(),1,sum))} en \Sexpr{max(apply(accgegevens_wijz(),1,sum))} en zijn gemiddeld \Sexpr{round(mean(apply(accgegevens_wijz(),1,sum)),2)}, met een standaarddeviatie van \Sexpr{round(sd(apply(accgegevens_wijz(),1,sum)),2)}.
+
+\subsection{Totaalscores, cesuur en cijfers}
+
+Op basis van de uiteindelijke toets zijn de resultaten van de toetsdeelnemers bepaald. In Figuur \ref{plot_totaalscore} wordt de verdeling van de totaalscores op de uiteindelijke toets weergegeven. De streeplijn ligt direct links van de cesuur van de toets; het aantal vragen dat deelnemers tenminste correct moeten beantwoorden om te slagen. Boven elke staaf staat het cijfer dat wordt toegekend bij die totaalscore. 
+
+<<tekst_cesuurmethode, r, echo=FALSE>>=
+if(input$cesuurmethode=="absoluut (percentage score)"){
+  tekst_cesuurmethode <- paste("De cesuur van de toets is bepaald volgens een absolute methode. Het vereiste minimale percentage van de maximaal haalbare score (na correctie voor de gokscore) werd hierbij ingesteld als", input$cesuur_absoluut, "procent.")}
+if(input$cesuurmethode=="relatief (slagingspercentage)"){
+  tekst_cesuurmethode <- paste("De cesuur van de toets is bepaald volgens een relatieve methode. Het vereiste slagingspercentage werd hierbij ingesteld als", input$cesuur_relatief, "procent.")}
+if(input$cesuurmethode=="Cohen-Schotanus"){
+  tekst_cesuurmethode <- paste("De cesuur van de toets is bepaald volgens de methode Cohen-Schotanus. Het vereiste minimale percentage van de score op het 95ste percentiel (na correctie voor de gokscore) werd hierbij ingesteld als", input$cesuur_cohen, "procent.")}
+if(input$cesuurmethode=="Hofstee"){
+  tekst_cesuurmethode <- paste0("De cesuur van de toets is bepaald met de Hofsteemethode. Hierbij werd de bandbreedte van acceptabele percentages gezakten ingesteld als ",input$cesuur_hofstee_zak[1], " tot ",input$cesuur_hofstee_zak[2]," procent. De bandbreedte van acceptabele cesuren werd ingesteld als scores van ",input$cesuur_hofstee_score[1]," tot ",input$cesuur_hofstee_score[2],".")}
+if(input$cesuurmethode=="eigen cesuur opgeven"){
+  tekst_cesuurmethode <- "De cesuur van de toets is door de gebruiker los opgegeven."}
+@
+
+\Sexpr{tekst_cesuurmethode} De cesuur komt daarmee op een score van \Sexpr{cesuur_wijz()}, van de maximaal haalbare score van \Sexpr{sum(vraaggegevens_wijz()$maxscore)}. Dit correspondeert met \Sexpr{round(100*(cesuur_wijz()-gokscore_wijz())/(sum(vraaggegevens_wijz()$maxscore)-gokscore_wijz()),0)} procent van de uiteindelijke toets, gecorrigeerd voor de gokscore. Bij deze cesuur slagen \Sexpr{sum(deelnemergegevens_wijz()$slaag=="geslaagd")} van de \Sexpr{nrow(antwoordgegevens())} toetsdeelnemers (\Sexpr{round(100*sum(deelnemergegevens_wijz()$slaag=="geslaagd")/nrow(antwoordgegevens()),0)} procent).
+
+<<tekst_cijfermethode, r, echo=F>>=
+if(input$cijfermethode=="totaalscores niet hoger dan gokscore krijgen 1"){
+  tekst_cijfermethode <- "Voor het bepalen van de onvoldoende cijfers werd ingesteld dat totaalscores die niet hoger zijn dan de gokscore resulteren in een 1."}
+if(input$cijfermethode=="zelfde aantal vragen per punt als bij voldoende cijfers"){
+  tekst_cijfermethode <- "Voor het bepalen van de onvoldoende cijfers werd ingesteld dat hetzelfde aan vragen per punt werd gehanteerd als bij voldoende cijfers."}
+@
+
+Op basis van de cesuur zijn cijfers aan totaalscores toegekend, met het aantal door de gebruiker ingestelde decimalen. \Sexpr{tekst_cijfermethode} De behaalde cijfers liggen daarmee tussen de \Sexpr{min(deelnemergegevens_wijz()$cijfer)} en \Sexpr{max(deelnemergegevens_wijz()$cijfer)}. Het gemiddelde cijfer is een \Sexpr{round(mean(deelnemergegevens_wijz()$cijfer),2)}, met een standaarddeviatie van \Sexpr{round(sd(deelnemergegevens_wijz()$cijfer),2)}.
+
+\begin{figure}[H]
+<<plot_totaalscore, echo=F, warning=F, fig.height=4>>=
+plot_totaalscore_legbot_reactive()
+@
+\caption{Verdeling van totaalscores op de toets, met cesuur en bijbehorende cijfers}
+\label{plot_totaalscore}
+\end{figure}
+
+\section{Betrouwbaarheid}
+
+De betrouwbaarheid van een toets kan worden gekwanitificeerd met Cronbachs alfa. Bij toetsen op basis waarvan belangrijke beslissingen op individueel niveau worden genomen, worden hierbij waardes van minimaal 0.80 als voldoende beschouwd en waardes van minimaal 0.90 als goed. Bij minder belangrijke beslissingen op individueel niveau (bijvoorbeeld bij voortgangscontrole) worden waardes van minimaal 0.70 als voldoende en minimaal 0.80 als goed beschouwd. De Cronbachs alfa van deze toets is \Sexpr{round(as.numeric(cronbach(accgegevens_wijz())[3]),2)}.
+
+<<tekst_sb, r, echo=F>>=
+alfas <- data.frame(nvragen=0:1000, alfa=NA)
+      a <- as.numeric(cronbach(accgegevens_wijz())[3])
+      for(r in 1:nrow(alfas)){
+        n <- alfas$nvragen[r]/nrow(vraaggegevens_wijz())
+        alfas$alfa[r] <- round((n*a)/(1+(n-1)*a),2)}
+      min_nvragen_80 <- min(alfas[alfas$alfa>=.80,"nvragen"])
+      min_nvragen_90 <- min(alfas[alfas$alfa>=.90,"nvragen"])
+@
+
+De betrouwbaarheid van een toets neemt toe bij het verlengen van de toets met vergelijkbare vragen en neemt af bij verkorten. Met de Spearman-Brown-formule kan een voorspelling worden gemaakt van de betrouwbaarheid bij een ander aantal vergelijkbare vragen. De toets bestaat nu uit \Sexpr{nrow(vraaggegevens_wijz())} vragen en het minimale aantal vragen dat een voorspelde Cronbachs alfa van 0.80 geeft is \Sexpr{min_nvragen_80}. Voor een Cronbachs alfa van 0.90 is dat \Sexpr{min_nvragen_90} vragen.
+
+<<titel_groepsectie, r, echo=F>>=
+if(length(unique(deelnemergegevens()$groep))>1){titelgroepsectie<-"Scores per groep toetsdeelnemers"}else{titelgroepsectie<-""}
+@
+
+<<tekst1_groepsectie, r, echo=F>>=
+if(length(unique(deelnemergegevens()$groep))>1){tekst1_groepsectie<-"In de toetsanalyse werd onderscheid gemaakt tussen verschillende groepen toetsdeelnemers. In de tabel wordt weergegeven uit hoeveel toetsdeelnemers elke groep bestaat en hoeveel procent daarvan slaagt bij de gekozen cesuur. Daarnaast worden de gemiddelde cijfers en totaalscores per groep weergegeven, en als onderscheid wordt gemaakt tussen verschillende toetsonderdelen, de gemiddelde score per toetsonderdeel. "}else{tekst1_groepsectie<-""}
+@
+
+\section{\Sexpr{titelgroepsectie}}
+
+\Sexpr{tekst1_groepsectie}
+
+<<tab_groepen, r, echo=FALSE, warning=FALSE, results="asis">>=
+if(length(unique(deelnemergegevens()$groep))>1){
+  print(xtable(tab_groepen_reactive(), caption="Resultaten per groep toetsdeelnemers"), include.rownames=FALSE, caption.placement = "top", comment=F)}
+@
+
+<<tekst2_groepsectie, r, echo=F>>=
+if(length(unique(deelnemergegevens()$groep))>1){tekst2_groepsectie<-"In het figuur wordt de verdeling weergegeven van de totaalscores van groepen toetseelnemers. De staven zijn doorschijnend, zodat de verdelingen kunnen worden vergeleken."}else{tekst2_groepsectie<-""}
+@
+
+<<tekst3_groepsectie, r, echo=F>>=
+if(length(unique(deelnemergegevens()$groep))>1&length(unique(vraaggegevens_wijz()$onderdeel))>1){tekst3_groepsectie<-"In het daarop volgende figuur wordt de gemiddelde score per toetsonderdeel weergegeven voor de verschillende groepen toetsdeelnemers."}else{tekst3_groepsectie<-""}
+@
+
+\Sexpr{tekst2_groepsectie} \Sexpr{tekst3_groepsectie}
+
+<<plot_groepscores, echo=F, warning=F, fig.height=4, fig.cap="Verdeling totaalscores per groep toetsdeelnemers">>=
+if(length(unique(deelnemergegevens()$groep))>1){plot_groepscores_reactive()}
+@
+
+<<plot_groepdeelscores, echo=F, warning=F, fig.height=4, fig.cap="Gemiddelde score per toetsonderdeel per groep toetsdeelnemers">>=
+if(length(unique(deelnemergegevens()$groep))>1&length(unique(vraaggegevens_wijz()$onderdeel))>1){plot_groepdeelscores_reactive()}
+@
+
+\end{document}
